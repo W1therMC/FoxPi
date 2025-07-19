@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FoxPi Encryption System</title>
+<style>
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    background: #1a0b2a;
+    color: #cbb9ff;
+    max-width: 700px;
+    margin: 40px auto 80px;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px #7e43ffcc;
+    position: relative;
+    min-height: 90vh;
+  }
+  .foxpi-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 36px;
+    gap: 18px;
+  }
+  .foxpi-logo {
+    width: 58px;
+    height: 58px;
+    background: transparent;
+    border-radius: 12px;
+    object-fit: contain;
+    border: 2px solid #9a7aff33;
+    box-shadow: 0 0 8px #a366ff55;
+  }
+  .foxpi-title {
+    font-size: 2.3rem;
+    font-weight: bold;
+    color: #ff9000;
+    letter-spacing: 1.5px;
+    text-shadow: 0 2px 12px #a366ff99, 0 0px 2px #1a0b2a;
+    margin-left: 5px;
+    margin-top: 2px;
+  }
+  textarea, input[type=text] {
+    width: 100%;
+    font-size: 18px;
+    padding: 12px 15px;
+    margin-bottom: 20px;
+    background: #3a1f68;
+    border: 2px solid #9a7aff;
+    border-radius: 8px;
+    color: #e0cdfa;
+    box-sizing: border-box;
+  }
+  input[type=text] {
+    height: 40px;
+    font-weight: bold;
+  }
+  button {
+    background: #6e4cd3;
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    font-size: 17px;
+    margin-right: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 12px #a366ffaa;
+    transition: background-color 0.3s ease;
+  }
+  button:hover {
+    background: #9a7aff;
+    box-shadow: 0 0 20px #cbb9ff;
+  }
+  .output {
+    background: #2e1861;
+    border: 2px solid #b085ff;
+    padding: 18px;
+    white-space: pre-wrap;
+    min-height: 70px;
+    border-radius: 8px;
+    color: #d9cfff;
+    word-break: break-word;
+  }
+  label {
+    font-weight: bold;
+    display: block;
+    margin-top: 25px;
+    margin-bottom: 10px;
+    color: #bb99ff;
+  }
+  .transform-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.04em;
+    margin-bottom: 10px;
+    margin-top: -6px;
+    color: #fec066;
+    user-select: none;
+  }
+  .error {
+    color: #ff8b8b;
+    font-weight: bold;
+    margin-top: -15px;
+    margin-bottom: 10px;
+  }
+  .ad-banner {
+    position: fixed;
+    left: 16px;
+    bottom: 54px;
+    background: #251043;
+    border: 2px solid #6e4cd3;
+    border-radius: 8px;
+    padding: 7px 13px;
+    box-shadow: 0 0 12px #a366ff77;
+    z-index: 100;
+    opacity: 0.95;
+  }
+  .ad-banner a {
+    color: #ffda56;
+    font-weight: bold;
+    text-decoration: underline;
+    font-size: 15px;
+  }
+  footer {
+    position: fixed;
+    left: 16px;
+    bottom: 12px;
+    z-index: 99;
+    font-size: 15px;
+    color: #a366ff;
+    opacity: 0.75;
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 1px;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    animation: fadeIn 2.4s;
+  }
+  @keyframes fadeIn {
+    from { opacity:0;}
+    to { opacity:0.75;}
+  }
+  @media (max-width: 500px) {
+    .foxpi-title { font-size: 1.3rem;}
+    .foxpi-header { gap: 8px; }
+    .foxpi-logo { width: 42px; height: 42px;}
+    body { padding: 6vw 2vw; }
+  }
+</style>
+</head>
+<body>
+
+<div class="foxpi-header">
+  <!-- Use a PNG with transparent background for true transparency -->
+  <img src="https://pplx-res.cloudinary.com/image/upload/v1752939196/user_uploads/1599587/a9999e9f-fbb8-4521-9ace-3464573e962d/1000032626.jpg" alt="FoxPi Logo" class="foxpi-logo" />
+  <span class="foxpi-title">FoxPi</span>
+</div>
+
+<label for="seedInput">Seed (min 4, max 14 chars; letters, numbers, '.', '_'):</label>
+<input type="text" id="seedInput" placeholder="Enter seed here..." maxlength="14" />
+<div id="seedError" class="error"></div>
+
+<label for="inputText">Input text:</label>
+<textarea id="inputText" placeholder="Enter text to encrypt or decrypt..."></textarea>
+
+<label class="transform-label">
+  <input type="checkbox" id="extraTransform" />
+  Multiply all outputs by 3 and add 14 (Extra transform)
+</label>
+
+<button onclick="encryptText()">Encrypt</button>
+<button onclick="decryptText()">Decrypt</button>
+
+<label for="outputText">Output:</label>
+<div class="output" id="outputText"></div>
+
+<div class="ad-banner">
+  <a href="https://www.youtube.com/@W1therGM" target="_blank">
+    Check out my Youtube channel!
+  </a>
+</div>
+
+<footer>by: W1therMC</footer>
+
+<script>
+// Large-range character map with Turkish and normal letters
+const letterMap = {
+  'A': 551379, 'B': 662739, 'C': 773896, 'Ç': 876012, 'D': 384915, 'E': 495139,
+  'F': 806279, 'G': 217319, 'Ğ': 318805, 'H': 628499, 'I': 139577, 'İ': 239808,
+  'J': 541130, 'K': 352399, 'L': 863471, 'M': 174539, 'N': 885691, 'O': 596719,
+  'Ö': 296950, 'P': 707899, 'Q': 418971, 'R': 130139, 'S': 241279, 'Ş': 841509,
+  'T': 952399, 'U': 563535, 'Ü': 863800, 'V': 774676, 'W': 985711, 'X': 396839,
+  'Y': 307978, 'Z': 919139,
+  ' ': 900000
+};
+const reverseMap = Object.fromEntries(
+  Object.entries(letterMap).map(([k,v]) => [v, k])
+);
+// Turkish uppercase conversion
+function toTurkishUpper(str) {
+  return str.replace(/i/g, 'İ')
+            .replace(/ş/g, 'Ş')
+            .replace(/ğ/g, 'Ğ')
+            .replace(/ü/g, 'Ü')
+            .replace(/ö/g, 'Ö')
+            .replace(/ç/g, 'Ç')
+            .replace(/ı/g, 'I')
+            .toUpperCase();
+}
+// Valid seed checker
+function validateSeed(seed) {
+  const regex = /^[A-Za-z0-9._]{4,14}$/;
+  return regex.test(seed);
+}
+// Returns seed as array of numbers (modulo 1000)
+function seedToNumbers(seed) {
+  let nums = [];
+  for(let i=0; i<seed.length; i++) {
+    nums.push(seed.charCodeAt(i) % 1000);
+  }
+  return nums;
+}
+// Generate a random valid seed
+function randomSeed() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._';
+  const len = Math.floor(Math.random() * 11) + 4; // 4 to 14
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+// Fills empty seed field with random valid seed
+function autoSeedIfEmpty() {
+  const seedInput = document.getElementById('seedInput');
+  if (seedInput.value.trim() === '') {
+    const generated = randomSeed();
+    seedInput.value = generated;
+    return generated;
+  }
+  return seedInput.value;
+}
+// Random uppercase or Turkish letter for decrypt fail
+function randomLetter() {
+  const letters = 'ABCÇDEFGĞHIİJKLMNOÖPRSŞTUÜVYZ';
+  return letters.charAt(Math.floor(Math.random() * letters.length));
+}
+// Encrypt function
+function encryptText() {
+  const seed = autoSeedIfEmpty();
+  const seedErrorElem = document.getElementById('seedError');
+  const extraTransform = document.getElementById('extraTransform').checked;
+  if (!validateSeed(seed)) {
+    seedErrorElem.textContent = 'Invalid seed! 4-14 chars; letters, numbers, . or _ allowed.';
+    return;
+  }
+  seedErrorElem.textContent = '';
+  let input = document.getElementById('inputText').value;
+  input = toTurkishUpper(input);
+  const seedNums = seedToNumbers(seed);
+  let encrypted = [];
+  for (let i = 0; i < input.length; i++) {
+    let ch = input[i];
+    if (letterMap[ch] !== undefined) {
+      let baseNum = letterMap[ch];
+      let seedVal = seedNums[i % seedNums.length];
+      let val = (baseNum + seedVal);
+      val = val * 3 + 14;
+      if(extraTransform){
+        val = val * 3 + 14;
+      }
+      encrypted.push(val);
+    } else {
+      encrypted.push(`[${ch}]`);
+    }
+  }
+  document.getElementById('outputText').textContent = encrypted.join(' ');
+}
+// Decrypt function, with 75% gibberish result for incorrect seed
+function decryptText() {
+  const seed = autoSeedIfEmpty();
+  const seedErrorElem = document.getElementById('seedError');
+  const extraTransform = document.getElementById('extraTransform').checked;
+  if (!validateSeed(seed)) {
+    seedErrorElem.textContent = 'Invalid seed! 4-14 chars; letters, numbers, . or _ allowed.';
+    return;
+  }
+  seedErrorElem.textContent = '';
+  const input = document.getElementById('inputText').value.trim();
+  const seedNums = seedToNumbers(seed);
+  let parts = input.split(/\s+/);
+  let decrypted = '';
+  const randomizeOnFail = 0.75;
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (part.startsWith('[') && part.endsWith(']')) {
+      decrypted += part.slice(1, -1);
+      continue;
+    }
+    let num = Number(part);
+    if (isNaN(num)) {
+      decrypted += '?';
+      continue;
+    }
+    let val = num;
+    // Undo extra transform if needed
+    if(extraTransform){
+      val = (val - 14)/3;
+    }
+    val = (val - 14)/3;
+    let seedVal = seedNums[i % seedNums.length];
+    val = val - seedVal;
+    if (Number.isInteger(val) && reverseMap[val]) {
+      decrypted += reverseMap[val];
+    } else {
+      decrypted += (Math.random() < randomizeOnFail) ? randomLetter() : '?';
+    }
+  }
+  document.getElementById('outputText').textContent = decrypted;
+}
+
+</script>
+</body>
+</html>
